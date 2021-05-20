@@ -1,0 +1,1 @@
+alter table comment add column images varchar(5000) not null after top;

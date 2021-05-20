@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.UserActivityMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.UserActivity">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="activity_data" property="activityData" jdbcType="VARCHAR"
+          javaType="com.qiangdong.reader.dto.user_activity.ActivityData"
+          typeHandler="com.qiangdong.reader.config.JsonTypeHandler"/>
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+        <result column="top" property="top" />
+        <result column="type" property="type"/>
+    </resultMap>
+
+    <resultMap id="ManageResultMap" type="com.qiangdong.reader.dto.user_activity.UserActivityDto">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="avatar" property="avatar"/>
+        <result column="username" property="username" />
+        <result column="top" property="top" />
+        <result column="activity_data" property="activityData" jdbcType="VARCHAR"
+          javaType="com.qiangdong.reader.dto.user_activity.ActivityData"
+          typeHandler="com.qiangdong.reader.config.JsonTypeHandler"/>
+        <result column="create_at" property="createAt" />
+    </resultMap>
+
+    <resultMap id="ActivityForSearchResultMap" type="com.qiangdong.reader.search.UserActivityForSearch">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="avatar" property="avatar"/>
+        <result column="username" property="username" />
+        <result column="top" property="top" />
+        <result column="createActivity" property="createActivity" jdbcType="VARCHAR"
+          javaType="com.qiangdong.reader.dto.user_activity.CreateActivity"
+          typeHandler="com.qiangdong.reader.config.JsonTypeHandler"/>
+        <result column="create_at" property="createAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user_id, activity_data, create_at, update_at, top, type
+    </sql>
+
+    <select id="findById" resultMap="BaseResultMap">
+        select <include refid="Base_Column_List"/>
+        from user_activity ua
+        where ua.id = #{id}
+    </select>
+
+    <select id="findAllForSearch" resultMap="ActivityForSearchResultMap">
+        SELECT
+            a.id,
+            json_extract( a.activity_data, '$.createActivity') as createActivity,
+            a.user_id,
+            a.top,
+            a.create_at,
+            u.username,
+            u.avatar
+        FROM user_activity AS a
+        INNER JOIN user AS u ON u.id = a.user_id
+        WHERE a.type = 1
+    </select>
+
+    <insert id="save" parameterType="com.qiangdong.reader.entity.UserActivity">
+        insert into user_activity(id, user_id, activity_data, type, create_at, update_at, top) values (#{id}, #{userId},
+        #{activityData, jdbcType=VARCHAR, typeHandler=com.qiangdong.reader.config.JsonTypeHandler},
+        #{type}, #{createAt}, #{updateAt}, #{top})
+    </insert>
+
+    <update id="update" parameterType="com.qiangdong.reader.entity.UserActivity">
+        update user_activity
+        <trim prefix="set" suffixOverrides=",">
+            <if test="activityData != null">activity_data = #{activityData, jdbcType=VARCHAR, typeHandler=com.qiangdong.reader.config.JsonTypeHandler},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <select id="findActivityByManage" resultMap="ManageResultMap">
+        SELECT
+            a.id,
+            a.activity_data,
+            a.user_id,
+            a.top,
+            a.create_at,
+            u.username
+        FROM user_activity AS a
+        INNER JOIN user AS u ON u.id = a.user_id
+        WHERE a.type = 1 AND (
+                u.username like concat('%', #{usernameOrContent}, '%')
+                or JSON_UNQUOTE(json_extract(json_extract( a.activity_data, '$.createActivity'), '$.content'))
+                       like concat('%', #{usernameOrContent}, '%')
+        )
+        order by a.create_at DESC
+    </select>
+
+    <select id="findCreateActivityById" resultMap="ManageResultMap">
+        SELECT
+            a.id,
+            a.activity_data,
+            a.user_id,
+            a.top,
+            a.create_at,
+            u.username,
+            u.avatar
+        FROM user_activity AS a
+        INNER JOIN user AS u ON u.id = a.user_id
+        WHERE a.id = #{activityId} and a.type = 1
+    </select>
+
+    <select id="findCreateActivityByUserId" resultMap="ManageResultMap">
+        SELECT
+            ua.id,
+            ua.activity_data,
+            ua.user_id,
+            ua.top,
+            ua.create_at,
+            u.username,
+            u.avatar
+        FROM user_activity ua
+        INNER JOIN user AS u ON u.id = ua.user_id
+        WHERE ua.user_id = #{userId} and ua.type = 1
+        order by ua.top desc,
+                 ua.create_at desc
+    </select>
+
+    <select id="findCreateActivityByHeat" resultMap="ManageResultMap">
+        SELECT
+            a.id,
+            a.activity_data,
+            a.user_id,
+            a.top,
+            a.create_at,
+            u.username,
+            u.avatar
+        FROM user_activity AS a
+        INNER JOIN user AS u ON u.id = a.user_id
+        where a.type = 1
+        order by a.create_at desc
+    </select>
+
+    <select id="findCreateActivityByUserIdIn" resultMap="ManageResultMap">
+        SELECT
+            a.id,
+            a.activity_data,
+            a.user_id,
+            a.top,
+            a.create_at,
+            u.username,
+            u.avatar
+        FROM user_activity AS a
+        INNER JOIN user AS u ON u.id = a.user_id
+        WHERE a.user_id in
+        <foreach collection="userIds" item="id" open="(" close=")" separator=",">
+            ${id}
+        </foreach>
+        and a.type = 1
+        order by a.create_at desc
+    </select>
+
+    <select id="findAgreeActivityByIdIn" resultMap="ManageResultMap">
+        select
+            ua.id,
+            ua.activity_data,
+            ua.user_id,
+            ua.create_at,
+            u.avatar,
+            u.username
+        from user_activity ua
+        inner join user u on u.id = ua.user_id
+        where ua.type = 2 and ua.id in
+        <foreach collection="list" separator="," open="(" close=")" item="item">
+            #{item}
+        </foreach>
+        order by ua.create_at desc
+    </select>
+
+    <select id="findCreateActivityByIdIn" resultMap="ManageResultMap">
+        select
+            ua.id,
+            ua.activity_data,
+            ua.user_id,
+            ua.create_at,
+            u.avatar,
+            u.username
+        from user_activity ua
+        inner join user u on u.id = ua.user_id
+        where ua.type = 1 and ua.id in
+        <foreach collection="list" separator="," open="(" close=")" item="item">
+            #{item}
+        </foreach>
+        order by ua.create_at desc
+    </select>
+</mapper>

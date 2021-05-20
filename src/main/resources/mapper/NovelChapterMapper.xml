@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.NovelChapterMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.NovelChapter">
+        <id column="id" property="id" />
+        <result column="novel_id" property="novelId" />
+        <result column="title" property="title" />
+        <result column="word_count" property="wordCount" />
+        <result column="txt_url" property="txtUrl" />
+        <result column="progress" property="progress" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+        <result column="deleted" property="deleted" />
+        <result column="index" property="index" />
+        <result column="type" property="type" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="BaseColumnList">
+        id, novel_id, title, word_count, txt_url, progress, create_at, update_at, deleted, `index`, type
+    </sql>
+
+    <select id="findChaptersByNovelId" resultType="com.qiangdong.reader.entity.NovelChapter">
+        select <include refid="BaseColumnList"/>
+        from novel_chapter nc
+        where nc.deleted = 0 and nc.novel_id = #{novelId}
+    </select>
+
+    <select id="findLastUpdateChapter" resultType="com.qiangdong.reader.dto.novel.NovelChapterDto">
+        select <include refid="BaseColumnList"/>
+        from novel_chapter nc
+        where nc.deleted = 0 and nc.novel_id = #{novelId}
+        order by nc.index desc
+        limit 1
+    </select>
+
+    <select id="findNovelChapterCatalogItemByNovelId" resultType="com.qiangdong.reader.dto.novel.NovelChapterCatalogItemDto">
+        SELECT
+           id,
+           title,
+           review_status,
+           `index`
+        FROM novel_chapter AS chapter
+        WHERE deleted = 0 and novel_id = #{novelId}
+        ORDER BY `index`
+    </select>
+
+    <select id="findCurrentMonthChapterByNovelId" resultType="com.qiangdong.reader.entity.NovelChapter">
+        SELECT id,word_count
+        FROM novel_chapter
+        WHERE deleted = 0 and novel_id = #{novelId} AND word_count >= 4000
+          AND MONTH(create_at) = MONTH(NOW()) AND YEAR(create_at) = YEAR(NOW())
+    </select>
+
+    <select id="findLastIndexByNovelId" resultType="int">
+        select nc.index
+        from novel_chapter nc
+        where nc.deleted = 0 and nc.novel_id = #{novelId}
+        order by nc.index desc
+        limit 1
+    </select>
+
+    <select id="findDeleteChapters" resultType="com.qiangdong.reader.dto.novel.NovelChapterDto">
+        select
+            nc.id,
+            nc.title,
+            nc.word_count,
+            nc.update_at,
+            nc.word_count
+        from novel_chapter nc
+        where nc.novel_id = #{novelId} and nc.deleted = 1
+    </select>
+
+    <select id="findDeleteChapterById" resultType="com.qiangdong.reader.dto.novel.NovelChapterDto">
+        select
+            nc.id,
+            nc.title,
+            nc.word_count,
+            nc.update_at,
+            nc.txt_url
+        from novel_chapter nc
+        where nc.id = #{chapterId} and nc.deleted = 1
+    </select>
+
+    <select id="findYesterdayWriteWordCount" resultType="com.qiangdong.reader.entity.WorkDaySummary">
+        SELECT n.author_id as userId, sum(n.word_count) as wordCount,
+            case when sum(n.word_count) = 0 then 2
+                 when sum(n.word_count) > 0 then 1
+                 else 2 end as workStatus
+        FROM novel_chapter nc
+        inner join novel n on n.id = nc.novel_id
+        WHERE nc.deleted = 0 and n.author_id in
+        <foreach collection="ids" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        AND YEAR(nc.update_at) = YEAR(#{time})
+        and MONTH(nc.update_at) = MONTH(#{time})
+        AND DAY(nc.update_at) = DAY(#{time})
+        GROUP BY n.author_id
+    </select>
+
+    <select id="findYesterdayUpdate" resultType="com.qiangdong.reader.entity.NovelChapter">
+        select
+            nc.novel_id,
+            nc.word_count
+        from novel_chapter nc
+        where nc.deleted = 0
+          AND YEAR(nc.update_at) = YEAR(#{time})
+          and MONTH(nc.update_at) = MONTH(#{time})
+          AND DAY(nc.update_at) = DAY(#{time})
+    </select>
+
+    <insert id="saveAll" parameterType="com.qiangdong.reader.entity.NovelChapter">
+        insert into novel_chapter(id, title, novel_id, price, word_count, progress, index, type, review_status, author_words, txt_url, create_at, update_at) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.id}, #{item.title}, #{item.novelId}, #{item.price}, #{item.wordCount}, #{item.progress}, #{item.index}, #{item.type}, #{item.reviewStatus}, #{item.authorWords}, #{item.txtUrl}, #{item.createAt}, #{item.updateAt})
+        </foreach>
+    </insert>
+</mapper>

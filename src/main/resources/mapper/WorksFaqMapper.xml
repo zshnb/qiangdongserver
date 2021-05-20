@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.WorksFaqMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.WorksFaq">
+        <id column="id" property="id" />
+        <result column="faq_type" property="faqType" />
+        <result column="user_id" property="userId" />
+        <result column="works_id" property="worksId" />
+        <result column="works_type" property="worksType" />
+        <result column="question" property="question" />
+        <result column="answer" property="answer" />
+        <result column="read_status" property="readStatus" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, faq_type, user_id, works_id, works_type, question, answer, read_status, create_at, update_at
+    </sql>
+
+    <select id="findFaqByUserIdAndCreateAt" resultType="com.qiangdong.reader.dto.FaqDto">
+        SELECT
+            `id` as faqId,
+            `faq_type`,
+            `question`,
+            `create_at`
+        FROM `works_faq`
+        WHERE `user_id` = #{userId} and EXTRACT(YEAR FROM create_at) = EXTRACT(YEAR FROM #{createAt})
+    </select>
+
+    <select id="findFaqUnReadCountByUserId" resultType="java.lang.Integer">
+        SELECT
+            COUNT(`id`)
+        FROM `works_faq`
+        WHERE user_id = #{userId} AND read_status = 1
+    </select>
+
+    <select id="findSystemFaqByUserId" resultType="com.qiangdong.reader.dto.FaqDto">
+        SELECT
+            `id` as faqId,
+            `faq_type`,
+            `answer`,
+            `create_at`
+        FROM `works_faq`
+        WHERE `user_id` = #{userId} AND faq_type = 4
+    </select>
+
+    <select id="findFaqyByTypeAndNovel" resultType="com.qiangdong.reader.dto.FaqDto">
+        select
+            f.id as faqId,
+            f.faq_type,
+            f.read_status,
+            f.question,
+            f.answer,
+            f.create_at,
+            u.nickname,
+            u.avatar
+        from works_faq f
+        inner join novel n on f.works_id = n.id
+        inner join user u on u.id = n.author_id
+        where f.works_type=2 and n.type_id = #{typeId}
+    </select>
+
+    <select id="findFaqyByTypeAndComic" resultType="com.qiangdong.reader.dto.FaqDto">
+        select
+            f.id as faqId,
+            f.faq_type,
+            f.read_status,
+            f.question,
+            f.answer,
+            f.create_at,
+            u.nickname,
+            u.avatar
+        from works_faq f
+        inner join comic c on f.works_id = c.id
+        inner join user u on u.id = c.author_id
+        where f.works_type=1 and c.type_id = #{typeId}
+    </select>
+</mapper>

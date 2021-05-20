@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.UserChatMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.UserChat">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="chat_user_id" property="chatUserId" />
+        <result column="sender_uid" property="senderUid" />
+        <result column="type" property="type" />
+        <result column="content" property="content" />
+        <result column="create_at" property="createAt" />
+        <result column="deleted" property="deleted" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user_id, chat_user_id, sende, type, content, create_at, deleted
+    </sql>
+
+    <select id="findUserChatByUserId" resultType="com.qiangdong.reader.dto.user_chat.UserChatDto">
+        select
+            c1.id as chatId,
+            c1.chat_user_id,
+            c1.message,
+            c1.create_at,
+            c1.type,
+            c1.top,
+            c1.username,
+            c1.chat_tag,
+            u.avatar,
+            u.chat_status,
+            c2.`count` as unreadCount
+        from(
+            select c.*
+            from `user_chat` c
+            where c.user_id = #{userId} and deleted = 0
+            order by create_at desc
+            limit #{pageNumber}, #{pageSize}
+        ) as c1
+        inner join `user` u on u.id = c1.chat_user_id
+        inner join (
+            select
+		        c3.chat_user_id,
+		        ifnull(c4.`count`, 0) as `count`
+	            from user_chat c3
+	            left join (
+			        select chat_user_id, IFNULL(count(*), 0) as `count`
+			        from user_chat
+			        where user_id = #{userId} and deleted = 0 and read_status = 1
+			        group by chat_user_id
+			    ) c4 on c4.chat_user_id = c3.chat_user_id
+	        where c3.user_id = #{userId} and c3.deleted = 0
+	        GROUP BY c3.chat_user_id
+        ) as c2 on c2.chat_user_id = c1.chat_user_id
+        group by c1.chat_user_id
+    </select>
+
+    <select id="findChatByUserIdAndChatUser" resultType="com.qiangdong.reader.dto.user_chat.UserChatDto">
+        select
+            c.id as chatId,
+            c.user_id,
+            c.sender,
+            c.type,
+            c.message,
+            c.create_at,
+            u1.avatar
+        from user_chat c
+        inner join `user` u on  u.id =c.chat_user_id
+        inner join `user` u1 on  u1.id =c.sender
+        where c.`user_id` = #{userId} and c.chat_user_id = #{chatUserId} and c.deleted = 0
+        ORDER BY create_at desc
+    </select>
+
+    <select id="findLastUsernameByUserIdAndChatUserId" resultType="com.qiangdong.reader.entity.UserChat">
+        select username, top, chat_tag
+        from user_chat
+        where user_id = #{userId} and chat_user_id = #{chatUserId}
+        order by create_at desc
+        limit 1
+    </select>
+</mapper>

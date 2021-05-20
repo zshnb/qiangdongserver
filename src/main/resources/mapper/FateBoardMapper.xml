@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.FateBoardMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.dto.fate_board.FateBoardDto">
+        <id column="fateBoardId" property="fateBoardId" />
+        <result column="userId" property="userId" />
+        <result column="username" property="username" />
+        <result column="avatar" property="avatar" />
+        <result column="sex" property="sex" />
+        <result column="age" property="age" />
+        <result column="interest" property="interest" />
+        <result column="content" property="content" />
+        <result column="goods_id" property="goodsId" />
+        <result column="match_sex" property="matchSex" />
+        <result column="goods" property="goods" jdbcType="VARCHAR"
+          javaType="com.qiangdong.reader.dto.goods.FateBoardGoods"
+          typeHandler="com.qiangdong.reader.config.JsonTypeHandler"/>
+    </resultMap>
+
+    <select id="findByPage" resultMap="BaseResultMap">
+        select
+            fb.id as fateBoardId,
+            u.id as userId,
+            u.username,
+            u.avatar,
+            u.sex,
+            timestampdiff(year, birthday, curdate()) as age,
+            fb.interest,
+            fb.content,
+            json_extract(g.resource, '$.fateBoardGoods') as goods
+        from fate_board fb
+        inner join user u on fb.user_id = u.id
+        inner join goods g on fb.goods_id = g.id
+        where fb.status = 1 and fb.user_id != #{userId} and fb.user_id in
+        <foreach collection="set" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="findByUserId" resultMap="BaseResultMap">
+        select
+            fb.id as fateBoardId,
+            u.id as userId,
+            u.username,
+            u.avatar,
+            u.sex,
+            timestampdiff(year, birthday, curdate()) as age,
+            fb.interest,
+            fb.content,
+            fb.status,
+            fb.match_sex,
+            json_extract(g.resource, '$.fateBoardGoods') as goods,
+            fb.goods_id
+        from fate_board fb
+        inner join user u on fb.user_id = u.id
+        inner join goods g on fb.goods_id = g.id
+        where u.id = #{userId}
+    </select>
+</mapper>

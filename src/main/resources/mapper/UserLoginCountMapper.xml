@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.UserLoginCountMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.UserLoginCount">
+        <id column="id" property="id" />
+        <result column="count" property="count" />
+        <result column="create_at" property="createAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, count, create_at
+    </sql>
+
+    <select id="countByTime" resultType="int">
+        select count
+        from user_login_count
+        where day(create_at) = day(#{time})
+          and month(create_at) = month(#{time})
+          and year(create_at) = year(#{time})
+    </select>
+
+    <select id="findDauStatisticsByDay" resultType="com.qiangdong.reader.dto.statistics.DauStatisticsDto">
+        select
+            t.date as time,
+            sum(IF(DATE_FORMAT(create_at,'%Y-%m-%d')=t.date, count, 0)) as count
+        from (
+            select DATE_FORMAT(DATE_SUB(NOW(),INTERVAL xc DAY),'%Y-%m-%d') as date
+            from (
+                select @xi:=@xi+1 as xc
+                from
+                    (select 1 UNION select 2 UNION select 3 UNION select 4 UNION select 5) xc1,
+                    (select 1 UNION select 2 UNION select 3 UNION select 4 UNION select 5 UNION select 6) xc2,
+                    (select @xi:=-1) xc0
+            ) tt
+        ) t, user_login_count
+        group by t.date
+        order by t.date desc
+    </select>
+
+    <select id="findDauStatisticsByMonth" resultType="com.qiangdong.reader.dto.statistics.DauStatisticsDto">
+        select
+            t.date as time,
+            sum(IF(DATE_FORMAT(create_at,'%Y-%m')=t.date, count, 0)) as count
+        from (
+            select DATE_FORMAT(DATE_SUB(NOW(),INTERVAL xc month ),'%Y-%m') as date
+            from (
+                select @xi:=@xi+1 as xc
+                from
+                        (select 1 UNION select 2 UNION select 3) xc1,
+                        (select 1 UNION select 2 UNION select 3 UNION select 4) xc2,
+                        (select @xi:=-1) xc0
+            ) tt
+        ) t, user_login_count
+        group by t.date
+        order by t.date desc
+    </select>
+
+    <select id="findDauStatisticsByYear" resultType="com.qiangdong.reader.dto.statistics.DauStatisticsDto">
+        select
+            t.date as time,
+            sum(IF(DATE_FORMAT(create_at,'%Y')=t.date, count, 0)) as count
+        from (
+            select DATE_FORMAT(DATE_SUB(NOW(),INTERVAL xc year ),'%Y') as date
+            from (
+                select @xi:=@xi+1 as xc
+                from
+                    (select 1) xc1,
+                    (select 1 UNION select 2 UNION select 3 UNION select 4 UNION select 5) xc2,
+                    (select @xi:=-1) xc0
+            ) tt
+        ) t, user_login_count
+        group by t.date
+        order by t.date desc
+    </select>
+</mapper>

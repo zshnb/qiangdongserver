@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.RewardMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.Reward">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="count" property="count" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user_id, count, create_at, update_at
+    </sql>
+
+    <select id="sumRewardByWorksAndTime" resultType="java.lang.Integer">
+        select ifnull(SUM(`count`), 0)
+        from reward
+        where works_id = #{worksId} and works_type = #{worksType}
+	        and month(create_at) = month(#{time})  and year(create_at) = year(#{time})
+    </select>
+
+    <select id="findByWorksAndTime" resultType="com.qiangdong.reader.dto.RewardDto">
+        select
+            r.count as coin,
+            r.create_at,
+            u.username
+        from reward r
+        inner join user u on r.user_id = u.id
+        where r.works_id = #{worksId} and r.works_type = #{worksType}
+	        and month(r.create_at) = month(#{time})  and year(r.create_at) = year(#{time})
+    </select>
+
+    <select id="findYesterdayRewardByWorksType" resultType="com.qiangdong.reader.entity.Reward">
+        select
+            works_id,
+            count
+        from reward
+        where day(create_at) = day(#{time}) and month(create_at) = month(#{time}) and year(create_at) = year(#{time})
+            and works_type = #{worksType}
+    </select>
+</mapper>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.BookStandMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.BookStand">
+        <id column="id" property="id" />
+        <result column="associate_id" property="associateId" />
+        <result column="associate_type" property="associateType" />
+        <result column="user_id" property="userId" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, associate_id, associate_type, user_id, create_at, update_at
+    </sql>
+
+    <select id="findNovelBookStand" resultType="com.qiangdong.reader.dto.BookStandDto">
+        select
+            bs.id,
+            n.name as name,
+            u.nickname as authorName,
+            n.id       as worksId,
+            n.cover as cover
+        from book_stand bs
+        inner join novel n on n.id = bs.associate_id
+        inner join user u on n.author_id = u.id
+        where bs.user_id = #{userId} and bs.associate_type = 2
+    </select>
+
+    <select id="findComicBookStand" resultType="com.qiangdong.reader.dto.BookStandDto">
+        select
+            bs.id,
+            c.name as name,
+            u.nickname as authorName,
+            c.id       as worksId,
+            c.cover as cover
+        from book_stand bs
+        inner join comic c on c.id = bs.associate_id
+        inner join user u on c.author_id = u.id
+        where bs.user_id = #{userId} and bs.associate_type = 1
+    </select>
+
+    <select id="findYesterdayAddBookStand" resultType="com.qiangdong.reader.entity.BookStand">
+        select
+            id,
+            associate_id,
+            associate_type,
+            user_id
+        from book_stand
+        where associate_type = #{type}
+            and YEAR(create_at) = YEAR(#{time})
+            and MONTH(create_at) = MONTH(#{time})
+            and DAY(create_at) = DAY(#{time})
+    </select>
+</mapper>

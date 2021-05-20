@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.TopicMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.Topic">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="reference_count" property="referenceCount" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, name, reference_count, create_at, update_at
+    </sql>
+
+    <update id="increaseReferenceCount" parameterType="long">
+        update topic t
+        set t.reference_count = t.reference_count + 1
+        where t.id in
+        <foreach collection="list" separator="," open="(" close=")" item="id">
+            #{id}
+        </foreach>
+    </update>
+
+    <update id="decreaseReferenceCount" parameterType="long">
+        update topic t
+        set t.reference_count = t.reference_count - 1
+        where t.id in
+        <foreach collection="list" separator="," open="(" close=")" item="id">
+            #{id}
+        </foreach>
+    </update>
+
+    <select id="findById" resultType="com.qiangdong.reader.dto.TopicDto">
+        select
+            t.id,
+            t.name,
+            t.cover,
+            t.reference_count,
+            t.click_count,
+            u.id as userId,
+            u.username
+        from topic t
+        inner join user u on u.id = t.user_id
+        where t.id = #{id}
+    </select>
+</mapper>

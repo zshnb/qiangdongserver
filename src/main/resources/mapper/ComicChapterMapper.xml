@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.ComicChapterMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.ComicChapter">
+        <id column="id" property="id" />
+        <result column="comic_id" property="comicId" />
+        <result column="title" property="title" />
+        <result column="progress" property="progress" />
+        <result column="picture_url" property="pictureUrl" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+        <result column="deleted" property="deleted" />
+        <result column="index" property="index" />
+        <result column="type" property="type" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="BaseColumnList">
+        id, comic_id, title, progress, picture_url, create_at, update_at, deleted, `index`, type
+    </sql>
+
+    <select id="findComicChapterCatalogItemByComicId"
+            resultType="com.qiangdong.reader.dto.comic.ComicChapterCatalogItemDto">
+        SELECT
+           id,
+           title,
+           review_status,
+           `index`
+        FROM comic_chapter AS chapter
+        WHERE deleted = 0 and comic_id = #{comicId}
+        ORDER BY `index`
+    </select>
+
+    <select id="findChaptersByComicId" resultType="com.qiangdong.reader.entity.ComicChapter">
+        select <include refid="BaseColumnList"/>
+        from comic_chapter cc
+        where cc.deleted = 0 and cc.comic_id = #{comicId}
+    </select>
+
+    <select id="findLastUpdateChapter" resultType="com.qiangdong.reader.dto.comic.ComicChapterDto">
+        select <include refid="BaseColumnList"/>
+        from comic_chapter cc
+        where cc.deleted = 0 and cc.comic_id = #{comicId}
+        order by cc.index desc
+        limit 1
+    </select>
+
+    <select id="findLastIndexByComicId" resultType="int">
+        select cc.index
+        from comic_chapter cc
+        where cc.deleted = 0 and cc.comic_id = #{comicId}
+        order by cc.index desc
+        limit 1
+    </select>
+
+    <select id="findDeleteChapters" resultType="com.qiangdong.reader.dto.comic.ComicChapterDto">
+        select
+            cc.id,
+            cc.title,
+            cc.update_at
+        from comic_chapter cc
+        where cc.comic_id = #{comicId} and cc.deleted = 1
+    </select>
+
+    <select id="findDeleteChapterById" resultType="com.qiangdong.reader.dto.comic.ComicChapterDto">
+        select
+            cc.id,
+            cc.title,
+            cc.update_at,
+            cc.picture_url
+        from comic_chapter cc
+        where cc.id = #{chapterId} and cc.deleted = 1
+    </select>
+
+    <select id="findYesterdayUpdate" resultType="com.qiangdong.reader.entity.ComicChapter">
+        select
+            cc.comic_id,
+            cc.picture_count
+        from comic_chapter cc
+        where cc.deleted = 0
+          AND YEAR(cc.update_at) = YEAR(#{time})
+          and MONTH(cc.update_at) = MONTH(#{time})
+          AND DAY(cc.update_at) = DAY(#{time})
+    </select>
+</mapper>

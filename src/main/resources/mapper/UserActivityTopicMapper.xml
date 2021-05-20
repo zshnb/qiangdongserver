@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.UserActivityTopicMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.UserActivityTopic">
+        <id column="id" property="id" />
+        <result column="user_activity_id" property="userActivityId" />
+        <result column="topic_id" property="topicId" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+    </resultMap>
+
+    <resultMap id="UserActivityDtoResultMap" type="com.qiangdong.reader.dto.user_activity.UserActivityDto">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="avatar" property="avatar"/>
+        <result column="username" property="username" />
+        <result column="top" property="top" />
+        <result column="activity_data" property="activityData" jdbcType="VARCHAR"
+          javaType="com.qiangdong.reader.dto.user_activity.ActivityData"
+          typeHandler="com.qiangdong.reader.config.JsonTypeHandler"/>
+        <result column="create_at" property="createAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user_activity_id, topic_id, create_at, update_at
+    </sql>
+
+    <insert id="saveAll" parameterType="com.qiangdong.reader.entity.UserActivityTopic">
+        insert into user_activity_topic(id, user_activity_id, topic_id, create_at, update_at) values
+        <foreach collection="list" separator="," item="item">
+            (#{item.id}, #{item.userActivityId}, #{item.topicId}, #{item.createAt}, #{item.updateAt})
+        </foreach>
+    </insert>
+
+    <select id="findTopicByActivityId" resultType="com.qiangdong.reader.entity.Topic">
+        select
+            t.id,
+            t.name
+        from user_activity_topic uat
+        inner join topic t on uat.topic_id = t.id
+        where uat.user_activity_id = #{activityId}
+    </select>
+
+    <select id="findHeatCreateActivityInTopic" resultMap="UserActivityDtoResultMap">
+        select
+            ua.id,
+            ua.activity_data,
+            ua.top,
+            ua.create_at,
+            u.id as user_id,
+            u.username,
+            u.avatar
+        from user_activity_topic uat
+        inner join user_activity ua on uat.user_activity_id = ua.id
+        inner join user u on ua.user_id = u.id
+        where uat.topic_id = #{topicId} and ua.type = 1
+        order by (CAST(JSON_UNQUOTE(json_extract(json_extract(ua.activity_data, '$.createActivity'), '$.agreeCount')) as signed) * 10
+            - CAST(JSON_UNQUOTE(json_extract(json_extract(ua.activity_data, '$.createActivity'), '$.againstCount')) as signed) * 5
+            + CAST(JSON_UNQUOTE(json_extract(json_extract(ua.activity_data, '$.createActivity'), '$.shareCount')) as signed) * 5
+            + CAST(JSON_UNQUOTE(json_extract(json_extract(ua.activity_data, '$.createActivity'), '$.commentCount')) as signed) * 3) desc
+    </select>
+
+    <select id="findNewerCreateActivityInTopic" resultMap="UserActivityDtoResultMap">
+        select
+            ua.id,
+            ua.activity_data,
+            ua.top,
+            ua.create_at,
+            u.id as user_id,
+            u.username,
+            u.avatar
+        from user_activity_topic uat
+        inner join user_activity ua on uat.user_activity_id = ua.id
+        inner join user u on ua.user_id = u.id
+        where uat.topic_id = #{topicId} and ua.type = 1
+        order by ua.create_at desc
+    </select>
+</mapper>

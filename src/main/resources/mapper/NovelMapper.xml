@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.NovelMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.Novel">
+        <id column="id" property="id" />
+        <result column="cover" property="cover" />
+        <result column="author_id" property="authorId" />
+        <result column="word_count" property="wordCount" />
+        <result column="update_status" property="updateStatus" />
+        <result column="contract_status" property="contractStatus" />
+        <result column="show_status" property="showStatus" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+        <result column="deleted" property="deleted" />
+        <result column="name" property="name" />
+        <result column="collect_count" property="collectCount" />
+        <result column="recommend_ticket" property="recommendTicket" />
+        <result column="wall_ticket" property="wallTicket" />
+        <result column="type_id" property="typeId" />
+        <result column="click_count" property="clickCount" />
+        <result column="description" property="description" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, cover, author_id, word_count, update_status, contract_status, show_status, create_at, update_at, deleted, name, collect_count, recommend_ticket, wall_ticket, type_id, click_count, description
+    </sql>
+
+    <sql id="NovelDtoColumnList">
+        n.id as novelId,
+        t.id as typeId,
+        n.name,
+        t.name as typeName,
+        n.word_count,
+        n.click_count,
+        n.collect_count,
+        n.recommend_ticket,
+        n.wall_ticket,
+        u.nickname as authorName,
+        n.update_status,
+        n.description,
+        n.cover,
+        n.foreword,
+        u.id as authorId,
+        u.avatar,
+        n.contract_status
+    </sql>
+
+    <select id="findByTypeId" resultType="com.qiangdong.reader.dto.novel.NovelDto">
+        select <include refid="NovelDtoColumnList"/>
+        from novel n
+        inner join type t on t.id = n.type_id
+        inner join user u on n.author_id = u.id
+        <where>
+            n.deleted = 0
+            and n.word_count &lt;= #{maxCount}
+            and n.word_count &gt;= #{minCount}
+            and exists(select * from novel_chapter nc where nc.deleted = 0 and nc.novel_id = n.id and nc.review_status = 2)
+            <if test="updateStatus.description != @com.qiangdong.reader.enums.common.WorksUpdateStatusEnum@NONE.description">
+                and n.update_status = #{updateStatus}
+            </if>
+            <if test="typeId != 0">
+                and t.id = #{typeId}
+            </if>
+        </where>
+    </select>
+
+    <select id="findByParentTypeId" resultType="com.qiangdong.reader.dto.novel.NovelDto">
+        select <include refid="NovelDtoColumnList"/>
+        from novel n
+        inner join type t on t.id = n.type_id
+        inner join user u on n.author_id = u.id
+        <where>
+            n.deleted = 0
+            and t.parent_id = #{typeId}
+            and n.word_count &lt;= #{maxCount}
+            and n.word_count &gt;= #{minCount}
+            and exists(select * from novel_chapter nc where nc.deleted = 0 and nc.novel_id = n.id and nc.review_status = 2)
+            <if test="updateStatus.description != @com.qiangdong.reader.enums.common.WorksUpdateStatusEnum@NONE.description">
+                and n.update_status = #{updateStatus}
+            </if>
+        </where>
+    </select>
+
+    <select id="findByUserId" resultType="com.qiangdong.reader.dto.novel.NovelDto">
+        select <include refid="NovelDtoColumnList"/>
+        from novel n
+        inner join type t on t.id = n.type_id
+        inner join user u on n.author_id = u.id
+        where n.deleted = 0 and u.id = #{userId}
+        <if test="filterUnReviewNovel">
+            and exists(select * from novel_chapter nc where nc.deleted = 0 and nc.novel_id = n.id and nc.review_status = 2)
+        </if>
+    </select>
+
+    <select id="findNovelNameLike" resultType="com.qiangdong.reader.dto.novel.NovelDto">
+        <bind name="searchNovelName" value="'%' + novelName + '%'"/>
+        select <include refid="NovelDtoColumnList"/>
+        from novel n
+        inner join type t on t.id = n.type_id
+        inner join user u on n.author_id = u.id
+        where n.deleted = 0 and n.name like #{searchNovelName}
+            and exists(select * from novel_chapter nc where nc.deleted = 0 and nc.novel_id = n.id and nc.review_status = 2)
+    </select>
+
+    <select id="findNovelAndFirstChapter" resultType="com.qiangdong.reader.dto.novel.NovelAndFirstChapterWithReviewDto">
+        SELECT
+            chapter.id,
+            chapter.title,
+            chapter.index,
+            chapter.word_count AS chapterWordCount,
+            chapter.txt_url,
+            chapter.create_at,
+            chapter.type,
+            chapter.review_status,
+            novel.name as novelName,
+            user.nickname
+        FROM novel
+        INNER JOIN novel_chapter AS chapter ON chapter.novel_id=novel.id
+        INNER JOIN user ON novel.author_id=user.id
+        WHERE novel.deleted = 0 and `index` = 1 and chapter.review_status != 2
+        order by novel.create_at desc
+    </select>
+
+    <select id="findNovelAndLastChapterByUserId" resultType="com.qiangdong.reader.dto.novel.NovelAndLastUpdateChapterDto">
+        select
+            n.id,
+            n.name,
+            n.cover,
+            n.collect_count,
+            n.update_status,
+            nc.title,
+            nc.update_at,
+            nc.type,
+            t.name as TypeName,
+            (SELECT name FROM type WHERE id = t.parent_id) AS parentTypeName
+        from novel n
+        inner join novel_chapter nc on nc.novel_id = n.id and nc.deleted = 0 and nc.index =
+            (select max(nc2.index) from novel_chapter nc2 where nc2.deleted = 0 and nc2.novel_id = n.id  group by nc2.novel_id)
+        inner join type t on n.type_id = t.id
+        where n.deleted = 0 and n.author_id = #{userId}
+    </select>
+
+    <select id="findNovelByManageTypeId" resultType="com.qiangdong.reader.dto.novel.NovelByManageTypeDto">
+        SELECT
+            n.id as novelId,
+            n.name as novelName,
+            n.show_status,
+            n.contract_status,
+            n.author_id,
+            user.nickname,
+            user.sex,
+            user_level.level_name
+        FROM novel n
+        INNER JOIN user ON n.author_id = user.id
+        INNER JOIN user_level ON user_level.id = user.level_id
+        WHERE n.deleted = 0 and n.type_id = #{typeId}
+            and exists(select * from novel_chapter nc where nc.deleted = 0 and nc.novel_id = n.id and nc.review_status = 2)
+            <if test="levelName != ''">
+                AND user_level.level_name = #{levelName}
+            </if>
+            <if test="sex != 2 ">
+                AND user.sex = #{sex}
+            </if>
+    </select>
+
+    <select id="findRecommendNovelByIdIn" resultType="com.qiangdong.reader.dto.novel.RecommendNovelDto">
+        select
+            n.id as novelId,
+            n.name,
+            n.cover,
+            n.description,
+            concat((select name from type t2 where t2.id = t.parent_id), '|', t.name) as typeName,
+            u.nickname as authorName,
+            u.id as authorId,
+            u.avatar
+        from novel n
+        inner join type t on t.id = n.type_id
+        inner join user u on n.author_id = u.id
+        where n.deleted = 0 and n.id in
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        and exists(select * from novel_chapter nc where nc.deleted = 0 and nc.novel_id = n.id and nc.review_status = 2)
+    </select>
+
+    <select id="findRecommendNovelById" resultType="com.qiangdong.reader.dto.novel.RecommendNovelDto">
+        select
+            n.id as novelId,
+            n.name,
+            n.cover,
+            n.description,
+            concat((select name from type t2 where t2.id = t.parent_id), '|', t.name) as typeName,
+            u.nickname as authorName,
+            u.id as authorId,
+            u.avatar
+        from novel n
+        inner join type t on t.id = n.type_id
+        inner join user u on n.author_id = u.id
+        where n.deleted = 0 and n.id = #{id}
+    </select>
+
+    <select id="findByNovelId" resultType="com.qiangdong.reader.dto.novel.NovelDto">
+        select <include refid="NovelDtoColumnList"/>
+        from novel n
+        inner join type t on t.id = n.type_id
+        inner join user u on n.author_id = u.id
+        where n.deleted = 0 and n.id = #{novelId}
+    </select>
+
+    <select id="findNovelByWorksTopicId" resultType="com.qiangdong.reader.dto.novel.NovelDto">
+        select
+            n.id as novelId,
+            n.name,
+            n.description,
+            n.cover,
+            u.id as authorId,
+            u.nickname as authorName,
+            t.name as typeName,
+            (SELECT name FROM type WHERE id = t.parent_id) AS parentTypeName
+        from novel n
+        inner join type t on t.id = n.type_id
+        inner join user u on n.author_id = u.id
+        where n.topic_id = #{worksTopicId} and n.deleted = 0
+    </select>
+
+    <select id="findDeletedNovels" resultType="com.qiangdong.reader.dto.novel.NovelDto">
+        select <include refid="NovelDtoColumnList"/>
+        from novel n
+        inner join type t on t.id = n.type_id
+        inner join user u on n.author_id = u.id
+        where n.deleted = 1
+        order by n.create_at desc
+    </select>
+
+    <select id="findDeletedById" resultType="com.qiangdong.reader.entity.Novel">
+        select id
+        from novel n
+        where n.deleted = 1 and n.id = #{id}
+    </select>
+
+    <update id="restoreNovel" parameterType="long">
+        update novel
+        set deleted = 0
+        where id = #{id}
+    </update>
+
+    <select id="findNovelByTopicId" resultType="com.qiangdong.reader.dto.novel.NovelDto">
+        select
+        n.id as novelId,
+        n.name,
+        u.nickname as authorName
+        from novel as n
+        inner join user as u on n.author_id = u.id
+        where n.topic_id = #{topicId}
+    </select>
+
+    <select id="findAllForSearch" resultType="com.qiangdong.reader.search.NovelForSearch">
+        select
+            n.id as novelId,
+            n.name,
+            n.cover,
+            n.description,
+            u.id as authorId,
+            u.nickname as authorName,
+            u.avatar
+        from novel n
+        inner join user as u on n.author_id = u.id
+        where n.deleted = 0
+    </select>
+</mapper>

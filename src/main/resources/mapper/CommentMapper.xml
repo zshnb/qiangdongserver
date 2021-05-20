@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.CommentMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.Comment">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="content" property="content" />
+        <result column="type" property="type" />
+        <result column="associate_id" property="associateId"/>
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user_id, content, type, create_at, update_at
+    </sql>
+
+    <select id="findNovelCommentByNovelId" resultType="com.qiangdong.reader.dto.WorksCommentDto">
+        select
+            c.id as commentId,
+            c.content,
+            u.username,
+            u.id as userId,
+            u.avatar,
+            c.top,
+            c.create_at
+        from comment c
+        inner join `user` u on u.id = c.user_id
+        inner join novel n on n.id = c.associate_id
+        where c.type = 1 and c.associate_id = #{novelId}
+        order by c.top desc,
+                 c.create_at desc
+    </select>
+
+    <select id="findComicCommentByComicId" resultType="com.qiangdong.reader.dto.WorksCommentDto">
+        select
+            c.id as commentId,
+            c.content,
+            u.username,
+            u.id as userId,
+            u.avatar,
+            c.top,
+            c.create_at
+        from comment c
+        inner join `user` u on u.id = c.user_id
+        inner join comic cc on cc.id = c.associate_id
+        where c.type = 3 and c.associate_id = #{comicId}
+        order by c.top desc,
+                 c.create_at desc
+    </select>
+
+    <select id="findUserActivityCommentByUserActivityId"
+      resultType="com.qiangdong.reader.dto.comment.CommentDto">
+        select
+            c.content,
+            c.create_at,
+            c.agree_count,
+            c.against_count,
+            c.images,
+            u.username as userName,
+            u.id as userId,
+            u.avatar
+        from comment c
+        inner join `user` u on u.id = c.user_id
+        inner join user_activity ua on ua.id = c.associate_id
+        where c.type = 6 and c.associate_id = #{activityId}
+        order by c.create_at desc
+    </select>
+
+    <select id="findReplyCommentByCommentId" resultType="com.qiangdong.reader.dto.comment.CommentDto">
+        select
+            c.content,
+            u.username as userName,
+            u.id as userId,
+            u.avatar,
+            c.create_at,
+            c.agree_count,
+            c.against_count
+        from comment c
+        inner join `user` u on u.id = c.user_id
+        inner join comment c2 on c2.id = c.associate_id
+        where c.type = 5 and c.associate_id = #{commentId}
+        order by c.create_at desc
+    </select>
+
+    <select id="findCreateActivityComment" resultType="com.qiangdong.reader.dto.comment.CommentDto">
+        select
+            c.id,
+            c.associate_id,
+            c.content,
+            u.username as userName,
+            u.id as userId,
+            u.avatar,
+            c.create_at,
+            c.type
+        from comment c
+        inner join user u on u.id = c.user_id
+        inner join user_activity ua on ua.id = c.associate_id
+        where ua.id in
+        <foreach collection="list" item="item" close=")" open="(" separator=",">
+            #{item}
+        </foreach>
+        order by c.create_at desc
+    </select>
+
+    <select id="findByIdIn" resultType="com.qiangdong.reader.dto.comment.CommentDto">
+        select
+            c.id,
+            c.associate_id,
+            c.content,
+            u.username as userName,
+            u.id as userId,
+            u.avatar,
+            c.create_at,
+            c.type
+        from comment c
+        inner join user u on u.id = c.user_id
+        where c.id in
+        <foreach collection="list" item="item" close=")" open="(" separator=",">
+            #{item}
+        </foreach>
+        order by c.create_at desc
+    </select>
+
+    <select id="findNovelChapterSummaryByNovelId"
+      resultType="com.qiangdong.reader.dto.novel.NovelChapterCommentSummaryDto">
+        select
+            nc.id as chapterId,
+            nc.title as chapterTitle,
+            count(*) as commentCount
+        from comment c
+        inner join novel_chapter nc on nc.id = c.associate_id
+        where nc.id in
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach> and c.type = 2
+        group by nc.id, nc.title
+        order by nc.id desc
+    </select>
+
+    <select id="findComicChapterSummaryByNovelId" resultType="com.qiangdong.reader.dto.comic.ComicChapterCommentSummaryDto">
+        select
+            cc.id as chapterId,
+            cc.title as chapterTitle,
+            count(*) as commentCount
+        from comment c
+        inner join comic_chapter cc on cc.id = c.associate_id
+        where cc.id in
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach> and c.type = 4
+        group by cc.id, cc.title
+        order by cc.id desc
+    </select>
+</mapper>

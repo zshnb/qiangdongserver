@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.UserConsumptionMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.UserConsumption">
+        <id column="id" property="id" />
+        <result column="description" property="description" />
+        <result column="user_id" property="userId" />
+        <result column="count" property="count" />
+        <result column="type" property="type" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+        <result column="deleted" property="deleted" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, description, user_id, count, type, create_at, update_at, deleted
+    </sql>
+
+    <select id="findNovelIncomeUserRankingDtoById" resultType="com.qiangdong.reader.dto.WorksIncomeUserRankingDto">
+        select
+            uc.user_id,
+            sum(uc.count) as sum,
+            u.avatar,
+            u.username,
+            ul.level_name as level
+        from novel n
+        inner join user_consumption uc on uc.associate_id = n.id
+        inner join user u on uc.user_id = u.id
+        inner join user_level ul on ul.level = u.level_id
+        where uc.associate_id = #{novelId} and uc.type = #{type}
+        group by uc.user_id
+    </select>
+
+    <select id="findComicIncomeUserRankingDtoById" resultType="com.qiangdong.reader.dto.WorksIncomeUserRankingDto">
+        select
+            uc.user_id,
+            sum(uc.count) as sum,
+            u.avatar,
+            u.username,
+            ul.level_name as level
+        from comic c
+        inner join user_consumption uc on uc.associate_id = c.id
+        inner join user u on uc.user_id = u.id
+        inner join user_level ul on ul.level = u.level_id
+        where uc.associate_id = #{comicId} and uc.type = #{type}
+        group by uc.user_id
+    </select>
+
+    <select id="findYesterdayNovelRecommendTicket" resultType="com.qiangdong.reader.entity.UserConsumption">
+        select
+            uc.count,
+            uc.associate_id
+        from user_consumption uc
+        inner join novel n on n.id = uc.associate_id
+        where year(uc.create_at) = year(#{time}) and month(uc.create_at) = month(#{time}) and day(uc.create_at) = day(#{time})
+            and uc.type = #{type}
+    </select>
+
+    <select id="findYesterdayComicRecommendTicket" resultType="com.qiangdong.reader.entity.UserConsumption">
+        select
+            uc.count,
+            uc.associate_id
+        from user_consumption uc
+        inner join comic c on c.id = uc.associate_id
+        where year(uc.create_at) = year(#{time}) and month(uc.create_at) = month(#{time}) and day(uc.create_at) = day(#{time})
+          and uc.type = #{type}
+    </select>
+</mapper>

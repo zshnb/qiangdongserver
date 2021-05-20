@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.BlockUserMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.BlockUser">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="target_user_id" property="targetUserId" />
+        <result column="create_at" property="createAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user_id, target_user_id, create_at
+    </sql>
+
+    <select id="findByUserId" resultType="com.qiangdong.reader.dto.BlockUserDto">
+        select
+            bu.id,
+            u.id as userId,
+            u.username,
+            u.avatar,
+            u.signature
+        from block_user bu
+        inner join user u on bu.target_user_id = u.id
+        where bu.user_id = #{userId}
+    </select>
+</mapper>

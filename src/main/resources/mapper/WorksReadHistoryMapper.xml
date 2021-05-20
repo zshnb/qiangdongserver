@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.WorksReadHistoryMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.WorksReadHistory">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="works_id" property="worksId" />
+        <result column="works_type" property="worksType" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user_id, works_id, works_type, create_at, update_at
+    </sql>
+
+    <select id="findNovelHistoryDto" resultType="com.qiangdong.reader.dto.WorksReadHistoryDto">
+        select
+            wrh.id as historyId,
+            n.id as worksId,
+            n.name as worksName,
+            u.nickname as authorName,
+            concat(t1.name, '|', t.name) as typeName,
+            wrh.last_read_chapter_index,
+            wrh.update_at,
+            u.avatar,
+            n.cover
+        from works_read_history wrh
+        inner join novel n on n.id = wrh.works_id
+        inner join user u on u.id = n.author_id
+        inner join type t on n.type_id = t.id
+        inner join type t1 on t.parent_id = t1.id
+        where wrh.works_type = 2 and wrh.user_id = #{userId}
+        order by wrh.update_at desc
+    </select>
+
+    <select id="findComicHistoryDto" resultType="com.qiangdong.reader.dto.WorksReadHistoryDto">
+        select
+            wrh.id as historyId,
+            c.id as worksId,
+            c.name as worksName,
+            u.nickname as authorName,
+            t.name as typeName,
+            wrh.last_read_chapter_index,
+            wrh.update_at,
+            u.avatar,
+            c.cover
+        from works_read_history wrh
+        inner join comic c on c.id = wrh.works_id
+        inner join user u on u.id = c.author_id
+        inner join type t on c.type_id = t.id
+        where wrh.works_type = 1 and wrh.user_id = #{userId}
+        order by wrh.update_at desc
+    </select>
+
+    <select id="findReadUserSexWithCount" resultType="com.qiangdong.reader.dto.statistics.ReadUserSexWithCount">
+        select
+            u.sex,
+            count(*) as count
+        from works_read_history wrh
+        inner join user u on wrh.user_id = u.id
+        where wrh.works_id = #{worksId} and wrh.works_type = #{worksType}
+        group by u.sex
+    </select>
+
+    <select id="findReadUserAgeWithCount" resultType="com.qiangdong.reader.dto.statistics.ReadUserAgeWithCount">
+        select
+            timestampdiff(year, birthday, curdate()) as age,
+            count(*) as count
+        from works_read_history wrh
+        inner join user u on wrh.user_id = u.id
+        where wrh.works_id = #{worksId} and wrh.works_type = #{worksType}
+        group by timestampdiff(year, birthday, curdate())
+    </select>
+</mapper>

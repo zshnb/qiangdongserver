@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.WorkDaySummaryMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.WorkDaySummary">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="word_count" property="wordCount" />
+        <result column="work_status" property="workStatus" />
+        <result column="create_at" property="createAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user_id, word_count, work_status, create_at
+    </sql>
+
+    <select id="findCurrentMonthWorkDaySummary" resultType="com.qiangdong.reader.entity.WorkDaySummary">
+        select *
+        from work_day_summary wds
+        where wds.user_id = #{userId}
+            and MONTH(wds.create_at) = MONTH(NOW())
+            and YEAR(wds.create_at) = YEAR(NOW())
+    </select>
+
+    <insert id="saveAll" parameterType="com.qiangdong.reader.entity.WorkDaySummary">
+        insert into work_day_summary values
+        <foreach collection="list" separator="," item="item">
+            (#{item.id}, #{item.userId}, #{item.wordCount}, #{item.workStatus}, #{item.createAt})
+        </foreach>
+    </insert>
+</mapper>

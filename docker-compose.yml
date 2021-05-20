@@ -1,0 +1,10 @@
+version: '2'
+services:
+  qiangdong:
+    image: reader:1.0
+    ports:
+      - "8080:8080"
+    environment:
+      - spring.profiles.active=dev
+    volumes:
+    - /var/logs:/var/logs

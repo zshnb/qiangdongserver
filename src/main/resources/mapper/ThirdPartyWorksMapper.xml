@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.ThirdPartyWorksMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.ThirdPartyWorks">
+        <id column="id" property="id" />
+        <result column="third_party_works_id" property="thirdPartyWorksId" />
+        <result column="third_party" property="thirdParty" />
+        <result column="works_id" property="worksId" />
+        <result column="works_type" property="worksType" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, third_party_works_id, third_party, works_id, works_type, create_at, update_at
+    </sql>
+
+</mapper>

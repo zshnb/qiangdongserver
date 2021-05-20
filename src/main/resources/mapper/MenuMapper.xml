@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.MenuMapper">
+
+    <select id="findMenuByRole" parameterType="integer" resultType="com.qiangdong.reader.entity.Menu">
+         select m.* from menu m where m.role=#{roleCode}
+    </select>
+
+  <select id="findMenuEnumList" resultType="com.qiangdong.reader.dto.MenuDto">
+    select m.id as value , m.name as label from menu m
+  </select>
+</mapper>

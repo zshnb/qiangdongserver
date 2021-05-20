@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.GoodsMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.Goods">
+        <id column="id" property="id" />
+        <result column="type" property="type" />
+        <result column="resource" property="resource" jdbcType="VARCHAR"
+          javaType="com.qiangdong.reader.dto.goods.Resource"
+          typeHandler="com.qiangdong.reader.config.JsonTypeHandler"/>
+        <result column="coin" property="coin" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        g.id, g.type, g.resource, g.coin, g.create_at, g.update_at
+    </sql>
+
+    <select id="findUserOwnGoods" resultMap="BaseResultMap">
+        select <include refid="Base_Column_List"/>
+        from goods g
+        inner join user_goods ug on g.id = ug.goods_id
+        where ug.user_id = #{userId} and g.type = #{type}
+    </select>
+
+    <select id="findByType" resultMap="BaseResultMap">
+        select <include refid="Base_Column_List"/>
+        from goods g
+        where g.type = #{type}
+    </select>
+
+    <select id="findByIdAndTypeAndUserId" resultMap="BaseResultMap">
+        select <include refid="Base_Column_List"/>
+        from goods g
+        inner join user_goods ug on g.id = ug.goods_id
+        where ug.goods_id = #{goodsId} and ug.user_id = #{userId} and g.type = #{type}
+    </select>
+</mapper>

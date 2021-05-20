@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.UserMapper">
+    <resultMap id="userResultMap" type="com.qiangdong.reader.entity.User">
+        <result column="secrecy_config" property="secrecyConfig" jdbcType="VARCHAR"
+          javaType="com.qiangdong.reader.dto.user.SecrecyConfig"
+          typeHandler="com.qiangdong.reader.config.JsonTypeHandler"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, username, nickname, avatar, mobile, password, introduction, coin, create_at, last_login_time, role, deleted
+    </sql>
+
+    <select id="findAuthorInfoById" resultType="com.qiangdong.reader.dto.user.UserDto">
+        SELECT
+          u.`id`,
+          u.`username`,
+          u.`nickname`,
+          u.`avatar`,
+          u.`mobile`,
+          u.`role`,
+          u.`qq_account`,
+          u.`email`,
+          u.`auth_name`,
+          u.`id_card`,
+          u.`user_sign_status`,
+          u.`sex`,
+          u.`address`,
+          u.update_at,
+          l.`level_name`
+        FROM `user` u
+        INNER JOIN `user_level` l ON l.`id` = u.`level_id`
+        WHERE u.id = #{userId} and u.deleted = 0
+    </select>
+
+    <select id="findUserEditor" resultType="com.qiangdong.reader.dto.user.UserDto">
+        SELECT
+            u.id,
+            u.username,
+            u.nickname,
+            u.auth_name,
+            u.avatar,
+            u.mobile,
+            u.create_at,
+            u.birthday,
+            u.sex,
+            t.name AS typeName,
+            (SELECT name FROM type WHERE id = t.parent_id) AS parentTypeName
+        FROM user as u
+        INNER JOIN type t ON u.type_id = t.id
+        WHERE u.role = 3 AND u.deleted = 0
+    </select>
+
+    <select id="findUserEditorByUserId" resultType="com.qiangdong.reader.dto.user.UserDto">
+        SELECT
+            u.id ,
+            u.username,
+            u.nickname,
+            u.auth_name,
+            u.avatar,
+            u.sex,
+            u.mobile,
+            u.create_at,
+            u.birthday,
+            t.id as typeId,
+            t.name AS typeName,
+            t.belong,
+            (SELECT name FROM type WHERE id = t.parent_id) AS parentTypeName
+        FROM user as u
+        INNER JOIN type t ON u.type_id = t.id
+        WHERE u.id = #{userId} AND u.deleted = 0
+    </select>
+
+    <select id="findUserAuthor" resultType="com.qiangdong.reader.dto.user.UserAuthorDto">
+        SELECT
+            u.id,
+            u.nickname,
+            u.auth_name,
+            u.avatar,
+            u.sex,
+            u.mobile,
+            l.level_name,
+            (SELECT id FROM novel n WHERE n.author_id = u.id LIMIT 1) AS checkNovel,
+            (SELECT id FROM comic c WHERE c.author_id = u.id LIMIT 1) AS checkComic
+        FROM user as u
+        INNER JOIN user_level AS l ON u.level_id = l.id
+        WHERE u.deleted = 0 and u.role = 2
+    </select>
+
+    <select id="findSecrecyConfigByUserId" resultMap="userResultMap">
+        select
+            id,
+            secrecy_config
+        from user
+        where id = #{userId}
+    </select>
+
+    <select id="countRegisterUserByTime" resultType="int">
+        select ifnull(count(*), 0)
+        from user u
+        where day(u.create_at) = day(#{time})
+          and month(u.create_at) = month(#{time})
+          and year(u.create_at) = year(#{time})
+    </select>
+
+    <select id="countLoginCountByTime" resultType="int">
+        select ifnull(count(*), 0)
+        from user u
+        where day(u.last_login_time) = day(#{time})
+          and month(u.last_login_time) = month(#{time})
+          and year(u.last_login_time) = year(#{time})
+    </select>
+
+    <select id="findRegisterStatisticsByDay" resultType="com.qiangdong.reader.dto.statistics.RegisterStatisticsDto">
+        select
+          t.date as time,
+          count(IF(DATE_FORMAT(create_at,'%Y-%m-%d')=t.date, id, null)) as count
+        from (
+               select DATE_FORMAT(DATE_SUB(NOW(),INTERVAL xc DAY),'%Y-%m-%d') as date
+               from (
+                      select @xi:=@xi+1 as xc
+                      from
+                          (select 1 UNION select 2 UNION select 3 UNION select 4 UNION select 5) xc1,
+                          (select 1 UNION select 2 UNION select 3 UNION select 4 UNION select 5 UNION select 6) xc2,
+                          (select @xi:=-1) xc0
+                    ) tt
+        ) t, user
+        group by t.date
+        order by t.date desc
+    </select>
+
+    <select id="findRegisterStatisticsByMonth" resultType="com.qiangdong.reader.dto.statistics.RegisterStatisticsDto">
+        select
+          t.date as time,
+          count(IF(DATE_FORMAT(create_at,'%Y-%m')=t.date, id, null)) as count
+        from (
+               select DATE_FORMAT(DATE_SUB(NOW(),INTERVAL xc month ),'%Y-%m') as date
+               from (
+                      select @xi:=@xi+1 as xc
+                      from
+                          (select 1 UNION select 2 UNION select 3) xc1,
+                          (select 1 UNION select 2 UNION select 3 UNION select 4) xc2,
+                          (select @xi:=-1) xc0
+                    ) tt
+             ) t, user
+        group by t.date
+        order by t.date desc
+    </select>
+
+    <select id="findRegisterStatisticsByYear" resultType="com.qiangdong.reader.dto.statistics.RegisterStatisticsDto">
+        select
+          t.date as time,
+          count(IF(DATE_FORMAT(create_at,'%Y')=t.date, id, null)) as count
+        from (
+               select DATE_FORMAT(DATE_SUB(NOW(),INTERVAL xc year),'%Y') as date
+               from (
+                      select @xi:=@xi+1 as xc
+                      from
+                          (select 1) xc1,
+                          (select 1 UNION select 2 UNION select 3 UNION select 4 UNION select 5) xc2,
+                          (select @xi:=-1) xc0
+                    ) tt
+             ) t, user
+        group by t.date
+        order by t.date desc
+    </select>
+
+    <select id="findAllForSearch" resultType="com.qiangdong.reader.search.UserForSearch">
+        select
+            u.id,
+            username,
+            avatar
+        from user u
+        where deleted = 0
+    </select>
+
+    <select id="countTodayLoginUser" resultType="int">
+        select count(*)
+        from user
+        where deleted = 0 and year(last_login_time) = year(now()) and month(last_login_time) = month(now())
+            and day(last_login_time) = day(now())
+    </select>
+
+    <update id="updateSecrecyConfig" parameterType="com.qiangdong.reader.dto.user.SecrecyConfig">
+        update user
+        set secrecy_config = #{secrecyConfig, jdbcType=VARCHAR, typeHandler=com.qiangdong.reader.config.JsonTypeHandler}
+        where id = #{userId}
+    </update>
+
+    <update id="updateRecommendTicketForAllUser">
+        update user
+        set recommend_ticket = recommend_ticket + 1
+    </update>
+
+    <update id="updateWallTicketForAllUser">
+      update user
+      set wall_ticket = wall_ticket + 1
+    </update>
+</mapper>

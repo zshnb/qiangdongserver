@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.ComicMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.Comic">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="cover" property="cover" />
+        <result column="author_id" property="authorId" />
+        <result column="update_status" property="updateStatus" />
+        <result column="contract_status" property="contractStatus" />
+        <result column="show_status" property="showStatus" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+        <result column="deleted" property="deleted" />
+        <result column="collect_count" property="collectCount" />
+        <result column="recommend_ticket" property="recommendTicket" />
+        <result column="wall_ticket" property="wallTicket"/>
+        <result column="type_id" property="typeId" />
+        <result column="click_count" property="clickCount" />
+        <result column="description" property="description" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, name, cover, author_id, update_status, contract_status, show_status, create_at, update_at, deleted, collect_count, recommend_ticket, wall_ticket, type_id, click_count, description
+    </sql>
+
+    <sql id="comicDtoColumnList">
+        c.id as comicId,
+        c.name,
+        c.wall_ticket,
+        t.name as typeName,
+        t.id as typeId,
+        c.click_count,
+        c.collect_count,
+        c.recommend_ticket,
+        u.nickname as authorName,
+        c.update_status,
+        c.description,
+        c.cover,
+        u.id as authorId,
+        u.avatar,
+        c.contract_status
+    </sql>
+
+    <select id="findByTypeId" resultType="com.qiangdong.reader.dto.comic.ComicDto">
+        select <include refid="comicDtoColumnList"/>
+        from comic c
+        inner join type t on t.id = c.type_id
+        inner join user u on c.author_id = u.id
+        where c.deleted = 0
+          and exists(select * from comic_chapter cc where cc.deleted = 0 and cc.comic_id = c.id and cc.review_status = 2)
+        <if test="typeId != 0">
+            and c.type_id = #{typeId}
+        </if>
+    </select>
+
+    <select id="findByUserId" resultType="com.qiangdong.reader.dto.comic.ComicDto">
+        select <include refid="comicDtoColumnList"/>
+        from comic c
+        inner join type t on t.id = c.type_id
+        inner join user u on c.author_id = u.id
+        where c.deleted = 0 and u.id = #{userId}
+        <if test="filterNoReviewComic">
+            and exists(select * from comic_chapter cc where cc.deleted = 0 and cc.comic_id = c.id and cc.review_status = 2)
+        </if>
+    </select>
+
+    <select id="findComicNameLike" resultType="com.qiangdong.reader.dto.comic.ComicDto">
+        <bind name="searchComicName" value="'%' + comicName + '%'"/>
+        select <include refid="comicDtoColumnList"/>
+        from comic c
+        inner join type t on t.id = c.type_id
+        inner join user u on c.author_id = u.id
+        where c.deleted = 0 and c.name like #{searchComicName}
+            and exists(select * from comic_chapter cc where cc.deleted = 0 and cc.comic_id = c.id and cc.review_status = 2)
+    </select>
+
+    <select id="findComicByManageType" resultType="com.qiangdong.reader.dto.comic.ComicByManageTypeDto">
+        SELECT
+            c.id AS comicId,
+            c.name AS comicName,
+            c.show_status,
+            c.contract_status,
+            c.author_id,
+            user.nickName,
+            user.sex,
+            user_level.level_name
+        FROM comic c
+        INNER JOIN user ON c.author_id = user.id
+        INNER JOIN user_level ON user_level.id = user.level_id
+        WHERE c.deleted = 0 and  c.type_id = #{typeId}
+            and exists(select * from comic_chapter cc where cc.deleted = 0 and cc.comic_id = c.id and cc.review_status = 2)
+        <if test="levelName != ''">
+            AND user_level.level_name = #{levelName}
+        </if>
+        <if test="sex != 2 ">
+            AND user.sex = #{sex}
+        </if>
+    </select>
+
+    <select id="findComicAndLastChapterByUserId" resultType="com.qiangdong.reader.dto.comic.ComicAndLastUpdateChapterDto">
+        select c.id,
+               c.name,
+               c.cover,
+               c.collect_count,
+               c.update_status,
+               cc.title,
+               cc.update_at,
+               cc.type,
+               t.name as TypeName,
+		    (SELECT name FROM type WHERE id = t.parent_id) AS parentTypeName
+        from comic c
+        inner join comic_chapter cc on cc.comic_id = c.id and cc.deleted = 0 and cc.index =
+            (select max(cc2.index) from comic_chapter cc2 where cc2.deleted = 0 and cc2.comic_id = c.id group by cc2.comic_id)
+        inner join type t on c.type_id = t.id
+        where c.deleted = 0 and c.author_id = #{userId}
+    </select>
+
+    <select id="findComicAndFirstChapter" resultType="com.qiangdong.reader.dto.comic.ComicAndFirstChapterWithReviewDto">
+        SELECT
+            chapter.id,
+            chapter.title,
+            chapter.index,
+            chapter.picture_url,
+            chapter.create_at,
+            chapter.type,
+            chapter.review_status,
+            comic.name AS comicName,
+            user.nickname
+        FROM comic
+        INNER JOIN comic_chapter AS chapter ON chapter.comic_id = comic.id
+        INNER JOIN user ON comic.author_id=user.id
+        WHERE comic.deleted = 0 and `index` = 1 and chapter.review_status != 2
+        ORDER BY comic.create_at DESC
+    </select>
+
+    <select id="findRecommendNovelByIdIn" resultType="com.qiangdong.reader.dto.comic.RecommendComicDto">
+        select
+            c.id as comicId,
+            c.name,
+            c.cover,
+            c.description,
+            t.name as typeName,
+            u.nickname as authorName,
+            u.id as authorId,
+            u.avatar
+        from comic c
+        inner join type t on t.id = c.type_id
+        inner join user u on c.author_id = u.id
+        where c.deleted = 0 and c.id in
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+            and exists(select * from comic_chapter cc where cc.deleted = 0 and cc.comic_id = c.id and cc.review_status = 2)
+    </select>
+
+    <select id="findRecommendComicById" resultType="com.qiangdong.reader.dto.comic.RecommendComicDto">
+        select
+            c.id as comicId,
+            c.name,
+            c.cover,
+            c.description,
+            t.name as typeName,
+            u.nickname as authorName,
+            u.id as authorId,
+            u.avatar
+        from comic c
+                 inner join type t on t.id = c.type_id
+                 inner join user u on c.author_id = u.id
+        where c.deleted = 0 and c.id = #{id}
+    </select>
+
+    <select id="findByComicIdIn" resultType="com.qiangdong.reader.dto.comic.ComicDto">
+        select <include refid="comicDtoColumnList"/>
+        from comic c
+        inner join type t on t.id = c.type_id
+        inner join user u on c.author_id = u.id
+        where c.deleted = 0 and c.id in
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="findByComicId" resultType="com.qiangdong.reader.dto.comic.ComicDto">
+        select <include refid="comicDtoColumnList"/>
+        from comic c
+        inner join type t on t.id = c.type_id
+        inner join user u on c.author_id = u.id
+        where c.deleted = 0 and c.id = #{comicId}
+    </select>
+
+    <select id="findComicByWorksTopicId" resultType="com.qiangdong.reader.dto.comic.ComicDto">
+        select
+        c.id as comicId,
+        c.name,
+        c.description,
+        c.cover,
+        u.id as authorId,
+        u.nickname as authorName,
+        t.name as typeName,
+        (SELECT name FROM type WHERE id = t.parent_id) AS parentTypeName
+        from comic c
+        inner join type t on t.id = c.type_id
+        inner join user u on c.author_id = u.id
+        where c.topic_id = #{worksTopicId} and c.deleted = 0
+    </select>
+
+    <select id="findDeletedComics" resultType="com.qiangdong.reader.dto.comic.ComicDto">
+        select <include refid="comicDtoColumnList"/>
+        from comic c
+        inner join type t on t.id = c.type_id
+        inner join user u on c.author_id = u.id
+        where c.deleted = 1
+        order by c.create_at desc
+    </select>
+
+    <select id="findDeletedById" resultType="com.qiangdong.reader.entity.Comic">
+        select id
+        from comic c
+        where c.deleted = 1 and c.id = #{id}
+    </select>
+
+    <update id="restoreComic" parameterType="long">
+        update comic
+        set deleted = 0
+        where id = #{id}
+    </update>
+
+    <select id="findComicByTopicId" resultType="com.qiangdong.reader.dto.comic.ComicDto">
+        select
+            c.id as comicId,
+            c.name,
+            u.nickname as authorName
+        from comic c
+        inner join user u on c.author_id=u.id
+        where c.topic_id = #{topicId}
+    </select>
+
+    <select id="findAllForSearch" resultType="com.qiangdong.reader.search.ComicForSearch">
+        select
+            c.id as comicId,
+            c.name,
+            c.cover,
+            c.description,
+            u.id as authorId,
+            u.nickname as authorName,
+            u.avatar
+        from comic c
+        inner join user as u on c.author_id = u.id
+        where c.deleted = 0
+    </select>
+</mapper>

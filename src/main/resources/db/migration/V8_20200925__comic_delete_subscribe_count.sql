@@ -1,0 +1,1 @@
+alter table comic drop column subscribe_count;

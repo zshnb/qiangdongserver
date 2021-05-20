@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.UserCreditRecordMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.UserCreditRecord">
+        <id column="id" property="id" />
+        <result column="description" property="description" />
+        <result column="price" property="price" />
+        <result column="coin" property="coin" />
+        <result column="user_id" property="userId" />
+        <result column="order_id" property="orderId" />
+        <result column="transaction_way" property="transactionWay" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+        <result column="deleted" property="deleted" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, description, price, coin, user_id, order_id, transaction_way, create_at, update_at, deleted
+    </sql>
+
+    <select id="listUserCreditRecord" resultType="com.qiangdong.reader.dto.UserCreditRecordDto">
+        SELECT
+            r.id,
+            r.description,
+            r.price,
+            r.transaction_way,
+            r.create_at,
+            u.id as userId,
+            u.username,
+            u.coin
+        FROM user_credit_record as r
+        INNER JOIN user as u on r.user_id = u.id
+        WHERE r.deleted = 0 and r.status = 1
+        <if test="username != '' ">
+            and  u.username like concat('%', #{username}, '%')
+        </if>
+    </select>
+
+    <select id="sumByTime" resultType="decimal">
+        select sum(price)
+        from user_credit_record
+        where day(create_at) = day(#{time})
+          and month(create_at) = month(#{time})
+          and year(create_at) = year(#{time}) and status = 1
+    </select>
+
+    <select id="countCreditUserByTime" resultType="int">
+        select count(distinct(user_id))
+        from user_credit_record
+        where day(create_at) = day(#{time})
+          and month(create_at) = month(#{time})
+          and year(create_at) = year(#{time}) and status = 1
+    </select>
+
+    <select id="sumCredit" resultType="decimal">
+        select sum(price)
+        from user_credit_record
+        where status = 1
+    </select>
+
+    <select id="findCreditStatisticsByDay" resultType="com.qiangdong.reader.dto.statistics.CreditStatisticsDto">
+        select
+            t.date as time,
+            sum(IF(DATE_FORMAT(create_at,'%Y-%m-%d')=t.date and status = 1, price, 0)) as count
+        from (
+                 select DATE_FORMAT(DATE_SUB(NOW(),INTERVAL xc DAY),'%Y-%m-%d') as date
+                 from (
+                          select @xi:=@xi+1 as xc
+                          from
+                                  (select 1 UNION select 2 UNION select 3 UNION select 4 UNION select 5) xc1,
+                                  (select 1 UNION select 2 UNION select 3 UNION select 4 UNION select 5 UNION select 6) xc2,
+                                  (select @xi:=-1) xc0
+                      ) tt
+             ) t, user_credit_record
+        group by t.date
+        order by t.date desc
+    </select>
+
+    <select id="findCreditStatisticsByMonth" resultType="com.qiangdong.reader.dto.statistics.CreditStatisticsDto">
+        select
+            t.date as time,
+            sum(IF(DATE_FORMAT(create_at,'%Y-%m')=t.date and status = 1, price, 0)) as count
+        from (
+                 select DATE_FORMAT(DATE_SUB(NOW(),INTERVAL xc month ),'%Y-%m') as date
+                 from (
+                          select @xi:=@xi+1 as xc
+                          from
+                                  (select 1 UNION select 2 UNION select 3) xc1,
+                                  (select 1 UNION select 2 UNION select 3 UNION select 4) xc2,
+                                  (select @xi:=-1) xc0
+                      ) tt
+             ) t, user_credit_record
+        group by t.date
+        order by t.date desc
+    </select>
+
+    <select id="findCreditStatisticsByYear" resultType="com.qiangdong.reader.dto.statistics.CreditStatisticsDto">
+        select
+            t.date as time,
+            sum(IF(DATE_FORMAT(create_at,'%Y')=t.date and status = 1, price, 0)) as count
+        from (
+                 select DATE_FORMAT(DATE_SUB(NOW(),INTERVAL xc year ),'%Y') as date
+                 from (
+                          select @xi:=@xi+1 as xc
+                          from
+                                  (select 1) xc1,
+                                  (select 1 UNION select 2 UNION select 3 UNION select 4 UNION select 5) xc2,
+                                  (select @xi:=-1) xc0
+                      ) tt
+             ) t, user_credit_record
+        group by t.date
+        order by t.date desc
+    </select>
+
+    <select id="findCreditUserStatisticsByDay" resultType="com.qiangdong.reader.dto.statistics.CreditUserStatisticsDto">
+      select
+        t.date as time,
+        count(distinct IF(DATE_FORMAT(create_at,'%Y-%m-%d')=t.date and status = 1, user_id, null)) as count
+      from (
+             select DATE_FORMAT(DATE_SUB(NOW(),INTERVAL xc DAY),'%Y-%m-%d') as date
+             from (
+                    select @xi:=@xi+1 as xc
+                    from
+                        (select 1 UNION select 2 UNION select 3 UNION select 4 UNION select 5) xc1,
+                        (select 1 UNION select 2 UNION select 3 UNION select 4 UNION select 5 UNION select 6) xc2,
+                        (select @xi:=-1) xc0
+                  ) tt
+           ) t, user_credit_record
+      group by t.date
+      order by t.date desc
+    </select>
+
+    <select id="findCreditUserStatisticsByMonth" resultType="com.qiangdong.reader.dto.statistics.CreditUserStatisticsDto">
+      select
+        t.date as time,
+        count(distinct IF(DATE_FORMAT(create_at,'%Y-%m')=t.date and status = 1, user_id, null)) as count
+      from (
+             select DATE_FORMAT(DATE_SUB(NOW(),INTERVAL xc month ),'%Y-%m') as date
+             from (
+                    select @xi:=@xi+1 as xc
+                    from
+                        (select 1 UNION select 2 UNION select 3) xc1,
+                        (select 1 UNION select 2 UNION select 3 UNION select 4) xc2,
+                        (select @xi:=-1) xc0
+                  ) tt
+           ) t, user_credit_record
+      group by t.date
+      order by t.date desc
+    </select>
+
+    <select id="findCreditUserStatisticsByYear" resultType="com.qiangdong.reader.dto.statistics.CreditUserStatisticsDto">
+      select
+        t.date as time,
+        count(distinct IF(DATE_FORMAT(create_at,'%Y')=t.date and status = 1, user_id, null)) as count
+      from (
+             select DATE_FORMAT(DATE_SUB(NOW(),INTERVAL xc year ),'%Y') as date
+             from (
+                    select @xi:=@xi+1 as xc
+                    from
+                        (select 1) xc1,
+                        (select 1 UNION select 2 UNION select 3 UNION select 4 UNION select 5) xc2,
+                        (select @xi:=-1) xc0
+                  ) tt
+           ) t, user_credit_record
+      group by t.date
+      order by t.date desc
+    </select>
+
+    <select id="findUserCreditUserRank" resultType="com.qiangdong.reader.dto.statistics.UserCreditRankDto">
+        select
+            u.username,
+            sum(ucr.price) as count
+        from user_credit_record ucr
+        inner join user u on ucr.user_id = u.id
+        where ucr.status = 1
+        group by ucr.user_id
+        order by sum(ucr.price) desc
+    </select>
+</mapper>

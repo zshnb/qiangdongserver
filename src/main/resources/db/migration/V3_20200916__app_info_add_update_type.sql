@@ -1,0 +1,1 @@
+alter table app_info add column update_type tinyint not null comment '更新类型' after platform;

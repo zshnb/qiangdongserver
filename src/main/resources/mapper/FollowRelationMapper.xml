@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.FollowRelationMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.FollowRelation">
+        <id column="id" property="id" />
+        <result column="follower_id" property="followerId" />
+        <result column="followed_id" property="followedId" />
+        <result column="follow_each" property="followEach" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, follower_id, followed_id, follow_each, create_at, update_at
+    </sql>
+
+    <select id="findFollowUser" resultType="com.qiangdong.reader.dto.FollowRelationDto">
+        select
+            fr.id as followRelationId,
+            fr.follow_each,
+            u.username,
+            u.avatar,
+            fr.followed_id,
+            u.signature
+        from follow_relation fr
+        inner join user u on u.id = fr.followed_id
+        where fr.follower_id = #{userId}
+    </select>
+
+    <select id="findFansUser" resultType="com.qiangdong.reader.dto.FollowRelationDto">
+        select
+            fr.id as followRelationId,
+            fr.follow_each,
+            u.username,
+            u.avatar,
+            u.id as followerId,
+            u.signature
+        from follow_relation fr
+        inner join user u on u.id = fr.follower_id
+        where fr.followed_id = #{userId}
+    </select>
+
+    <select id="findFollowerByIdIn" resultType="com.qiangdong.reader.dto.FollowRelationDto">
+        select
+            fr.id as followRelationId,
+            u.username,
+            u.avatar,
+            fr.follow_each,
+            fr.create_at,
+            fr.follower_id
+        from follow_relation fr
+        inner join user u on u.id = fr.follower_id
+        where fr.id in
+        <foreach collection="list" separator="," open="(" close=")" item="item">
+            #{item}
+        </foreach>
+        order by fr.create_at desc
+    </select>
+</mapper>

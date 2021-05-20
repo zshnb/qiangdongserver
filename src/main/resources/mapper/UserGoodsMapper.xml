@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.UserGoodsMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.UserGoods">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="goods_id" property="goodsId" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user_id, goods_id
+    </sql>
+
+    <insert id="saveAll" parameterType="com.qiangdong.reader.entity.UserGoods">
+        insert into user_goods(id, user_id, goods_id, create_at, update_at) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.id}, #{item.userId}, #{item.goodsId}, #{item.createAt}, #{item.updateAt})
+        </foreach>
+    </insert>
+</mapper>

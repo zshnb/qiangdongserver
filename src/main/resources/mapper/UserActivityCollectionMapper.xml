@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.UserActivityCollectionMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.UserActivityCollection">
+        <id column="id" property="id" />
+        <result column="user_activity_id" property="userActivityId" />
+        <result column="create_at" property="createAt" />
+    </resultMap>
+
+    <resultMap id="UserActivityCollectionResultMap" type="com.qiangdong.reader.dto.UserActivityCollectionDto">
+        <id column="id" property="id" />
+        <result column="username" property="username" />
+        <result column="avatar" property="avatar" />
+        <result column="activity_data" property="activityData" jdbcType="VARCHAR"
+                javaType="com.qiangdong.reader.dto.user_activity.ActivityData"
+                typeHandler="com.qiangdong.reader.config.JsonTypeHandler"/>
+        <result column="create_at" property="createAt" />
+        <result column="activityId" property="activityId"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user_activity_id, create_at
+    </sql>
+
+    <select id="listUserActivityCollection" resultMap="UserActivityCollectionResultMap">
+        select
+            uac.id,
+            uac.create_at,
+            ua.activity_data,
+            ua.id as activityId,
+            u.username,
+            u.avatar
+        from user_activity_collection uac
+        inner JOIN user_activity ua on ua.id = uac.user_activity_id
+        inner JOIN user u on ua.user_id = u.id
+        where uac.user_id = #{userId}
+    </select>
+
+</mapper>

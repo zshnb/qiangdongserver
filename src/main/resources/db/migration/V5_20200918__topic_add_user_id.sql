@@ -1,0 +1,1 @@
+alter table topic add column user_id bigint(20) not null;

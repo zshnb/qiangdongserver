@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.ActivityReadHistoryMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.ActivityReadHistory">
+        <result column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="activity_id" property="activityId" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user_id, activity_id, create_at, update_at
+    </sql>
+
+    <select id="findActivityReadHistoryByUserId"
+      resultType="com.qiangdong.reader.dto.read_activity_record.ActivityReadHistoryDto">
+        select
+            a.id as userActivityId,
+            r.`id`,
+            r.`user_id`,
+            r.`create_at`,
+            JSON_UNQUOTE(json_extract(json_extract(a.activity_data, '$.createActivity'), '$.content')) as content,
+            u.`username`
+        FROM `activity_read_history` as r
+        INNER JOIN `user_activity` as a ON r.activity_id = a.`id`
+        INNER JOIN `user` as u ON a.user_id = u.`id`
+        WHERE r.user_id = #{userId}
+        order by r.update_at desc
+    </select>
+
+</mapper>

@@ -1,0 +1,125 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: QIa+n20DOng20_daT
+    url: jdbc:mysql://sh-cdb-o6v7ro9y.sql.tencentcdb.com:61163/dev?useSSL=false&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&serverTimezone=CTT
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 20
+      idle-timeout: 500000
+      max-lifetime: 500000
+      connection-timeout: 60000
+      connection-test-query: SELECT 1
+  redis:
+    host: 111.229.70.183
+    port: 6379
+    password: qiangdong
+  servlet:
+    multipart:
+      max-file-size: 5MB
+  flyway:
+    baseline-on-migrate: true
+    clean-disabled: true
+    enabled: true
+  data:
+    elasticsearch:
+      repositories:
+        enabled: true
+      cluster-name: dev-es
+      cluster-nodes: 172.17.0.12:9300
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  typeEnumsPackage: com.qiangdong.reader.enums.*
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+
+oss:
+  secretId: AKIDX6cuzvnBxWNxfAcO6XNDyFLSsKeXifHf
+  secretKey: L9iFj261jFbT0LSRP9ey9an5TeVCyVTc
+  region: ap-nanjing
+  novel-bucket-name: novel-1301318552
+  novel-domain: https://novel-1301318552.cos.ap-nanjing.myqcloud.com
+  comic-bucket-name: comic-1301318552
+  comic-domain: https://comic-1301318552.cos.ap-nanjing.myqcloud.com
+  notice-bucket-name: notice-1301318552
+  notice-domain: https://notice-1301318552.cos.ap-nanjing.myqcloud.com
+  apk-file-bucket-name: apkfile-1301318552
+  apk-file-domain: https://apkfile-1301318552.cos.ap-guangzhou.myqcloud.com
+  image-bucket-name:  image-1301318552
+  image-domain: https://image-1301318552.cos.ap-nanjing.myqcloud.com
+
+sms:
+  accessId: LTAI4GCDVk3bUn1M3bpNzSpJ
+  accessSecret: XWRIE9dPgWRUzbxeh61HnZfEnu92xx
+  signName: 墙洞
+  identifyingTempleteCode: SMS_189613371
+  product: Dysmsapi
+  domain: dysmsapi.aliyuncs.com
+
+jwt:
+  secret-key: cWlhbmdkb25nLWp3dC1zZWNyZXQta2V5
+  subject: user
+  audience: app
+  issuer: qiangdong
+  expire: 172800000
+  enable: true
+  excludePaths:
+    - /user/login
+    - /user/register
+    - /user/register/verify-code
+    - /user/fast-login
+    - /user/fast-login/send-verify-code
+    - /manage/user/login
+    - /manage/user/register
+    - /manage/user/register/verify-code
+    - /manage/user/login/captcha
+    - /pay/alipay/callback
+    - /pay/wechat/callback
+    - /user-agreement/detail
+    - /user-agreement/by-type
+
+email:
+  host: smtp.qq.com
+  account: 3479709356@qq.com
+  password: pjbtdcqyijvrcjfd
+
+logging:
+  config: classpath:logback-spring-dev.xml
+
+alipay:
+  appId: 2021001162601508
+  gateway-url: https://openapi.alipay.com/gateway.do
+  charset: utf-8
+  format: json
+  sign-type: RSA2
+  notifyUrl: http://111.229.70.183:9090/pay/alipay/callback
+  public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAjRv5grjxjNSjAEygF6KKa+BFxECrBMeB4Ft+xb8p007xOevyCBkeYtcRukX4t1/OXqY43Omd6cQhTI87xF5z1vtyYMY8agvnhedQaY0dKIQJuKRw3UwtRjiOhhbo1IlIsa2f1u7Yvuh5I1EV7VZ8cp6ErWt3y5SebyTzVYpP3EXQDS2vVrPDruiVFYzJ/Ic1KQa2OrNjT3XcmVpeyyV1KvvraVr2DcpiuQgHLaIrRPxaBnqUUUaDaZbn5eIeAQtUMw9zx6xIBR6E4ZPD+FK3XHpyiqq7YvZXZiQKCXh9mbC6qXmB1BCZkcQmAsXP6iI6KKTCI0m0sPGJPpnRdX6TKwIDAQAB
+  ali-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAn8AkIG1LZRIjVkdQ6CahLiWKUEXw/cGlnmT+9lVPrzIp2YFbYaK4EkRVocJcW1JtLnzN/hnCVgY2xxQbyz01n3W0yJo3WYHPKi0wAJdpQVHQgIk1wT6FzBkuEIqZPap3ZyBu2DCiuy6+2/unE8kqy7XZzrJ/5MRlvOrYLprgkBRKv6pfnLvky34QDJjV+u3zVvUMg5NPziYWfjK+i8k1qZEgdc50LcH0OcNOLV9i1JjSzKPYA15ZU+aoGYBV2jqbzXA+Mui7smISi91m8BwltVFdh2Xo72jMTb7czqIUhRIV4J37gS2j/G+T8Y/pzP3t7zyedoLoxIdEiJR40iRaMQIDAQAB
+  private-key: MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCNG/mCuPGM1KMATKAXoopr4EXEQKsEx4HgW37FvynTTvE56/IIGR5i1xG6Rfi3X85epjjc6Z3pxCFMjzvEXnPW+3JgxjxqC+eF51BpjR0ohAm4pHDdTC1GOI6GFujUiUixrZ/W7ti+6HkjURXtVnxynoSta3fLlJ5vJPNVik/cRdANLa9Ws8Ou6JUVjMn8hzUpBrY6s2NPddyZWl7LJXUq++tpWvYNymK5CActoitE/FoGepRRRoNplufl4h4BC1QzD3PHrEgFHoThk8P4UrdcenKKqrti9ldmJAoJeH2ZsLqpeYHUEJmRxCYCxc/qIjoopMIjSbSw8Yk+mdF1fpMrAgMBAAECggEAK89CoPZAcEPYM5CWp5/cL+/aWTrmnb4/MWPWsRhPqP46YIxDgYYi6/bv1xBATtZc4P/kaZnSYDB3UiiqGqZkeptogGkrepUllWoiihK4ucp8pinPrLUo3UNT5IeaU9onippoJLfU7TiJ25AiKaSPUJqsgJb8A2Wp5sHnFmixsKY3vN0lK1DCtWZTAdkCfMFDaOOIBLkzc8bXlzlzafFjyzkjrc0TPIuLDkS4PlmbHlRKazaL9NPIACpo8V+whyd49kyYilW4ZYeXrQqgLaOTGMFZXZrXeglVhqYYv+nOqenTa15l/bmGp4Wurc22SR3ol90DPgmyhBZcM2WWQFSB6QKBgQDn4Ou5YVQzRZAXbWEcuW/TOK/vGmkvJk5Jvr5FIu8B6dgg9+mLTdncgE43+nhKU/2YaTlHpQ3ISQV4eIOI+pSM/FL8Z/ysRNR3aCuRB3SlihiPEIMmXxnNBBNsABh+wFNgPF20qZtV8jPD7TZDW9e6HQjX45wzL3ok/mceitTWLwKBgQCbyc6pXirPB1Vw4mLOPd+BUND1wDAh2srA9w51vNYqbH9JRHqmyCh+JYD4qxTsmv54WDt1nxoo2ltlPR+MjBGx/cjMY6VbkZYLJrdcPkkrHpWMLFv730BIAI+5rbKZiDgU/3YYh1rZsoH/7Z8ZUnZp+trsQtyXnU+uG8ObWicPxQKBgGZ4rXN1IaKu4SiZO8tX36U2bfl6cHVXtk08sBUZhQoRb2PSazEWrGqXgPmYBMTELVPHXHre5CJYssQ0bdyA8FkFwR6uTalLmaFTNb2Xz+LADm5a27p/WIWTgYm+2RRapf3nb3nBYlYu/NVe5RYLZmBnKFtPyN2N46qpiqSiscAdAoGAUOeeNuEblEa3vZckPv1s/GhvDKFRndNVZp8nWEfIZWHRPMiedc0PEmwBraKTjEj2DKOtxWjqGftEabAzmTcI3Ynx5Qt+za4u4P2rTfFe6FDK03AaGRUY+guomII3dXqDvYvp1dU9fj8xOis6a9kie+l2FiqnCun8fmwWyrAoBw0CgYAH800Jo3ldef0Mt4sQcketJc+VsviHgVBOFBGVhnvIH9qlfbFF7flKl9Ty6MPNFM1hR9lOf6azsITuHT1s+mkvGBp6OAtPNatJXgcRGxP89ra/bFUBjHqt9lJPAC8tNcQXO8QiHy/0o9uktGbEdqjSZoEGxtNb+X3j61OUsMRScw==
+
+wechat:
+  pay:
+    appId: wx74e4ae5f2c34ec07
+    mchId: 1601381596
+    key: vH5WlRT7WKDyXIXxBbksF7KWrhGKcDHw
+    notifyUrl: http://111.229.70.183:9090/pay/wechat/callback
+    signType: MD5
+
+es:
+  index-novel: false
+  index-comic: false
+  index-user-activity: false
+  index-user: false
+  index-topic: true
+
+push:
+  app-id: TJgw9KYiEM6a2DC6K0E2x8
+  app-key: ET8IBKNfib97eqcpy13zE9
+  App-secret: jfFKb4phaj81bJ9TtfrQU9
+  master-secret: 0rKrmiddJ78gPTSuftQsG7
+  url: http://api.getui.com/apiex.htm # https : https://api.getui.com/apiex.htm:

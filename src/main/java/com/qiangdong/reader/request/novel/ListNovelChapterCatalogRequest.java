@@ -1,0 +1,18 @@
+package com.qiangdong.reader.request.novel;
+
+
+import com.qiangdong.reader.request.BaseRequest;
+
+public class ListNovelChapterCatalogRequest extends BaseRequest {
+
+    private Long novelId = 0L;
+
+    public Long getNovelId() {
+        return novelId;
+    }
+
+    public void setNovelId(Long novelId) {
+        this.novelId = novelId;
+    }
+
+}

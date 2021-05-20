@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.NoticeMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.Notice">
+        <id column="id" property="id" />
+        <result column="title" property="title" />
+        <result column="subtitle" property="subtitle" />
+        <result column="content" property="content" />
+        <result column="type" property="type" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+        <result column="user_id" property="userId" />
+        <result column="deleted" property="deleted" />
+        <result column="cover" property="cover"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, title, subtitle, content, type, create_at, update_at, user_id, deleted,cover
+    </sql>
+
+    <sql id="NoticeDtoColumnList">
+        id,
+        title,
+        subtitle,
+        content,
+        cover,
+        create_at
+    </sql>
+
+    <select id="findByIdIn" resultType="com.qiangdong.reader.entity.Notice">
+        select <include refid="Base_Column_List"/>
+        from notice
+        where id in
+        <foreach collection="list" separator="," open="(" close=")" item="item">
+            #{item}
+        </foreach>
+        and deleted = 0
+        order by create_at desc
+    </select>
+</mapper>

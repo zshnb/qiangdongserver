@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qiangdong.reader.dao.SubscribeMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.qiangdong.reader.entity.Subscribe">
+        <id column="id" property="id" />
+        <result column="associate_id" property="associateId" />
+        <result column="user_id" property="userId" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+        <result column="type" property="type" />
+        <result column="auto" property="auto" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, associate_id, user_id, create_at, update_at, type, auto
+    </sql>
+
+    <select id="findYesterdaySubscribeCount" resultType="java.lang.Integer">
+        SELECT  count(*)
+        from `subscribe`
+        where  works_id = #{worksId} AND associate_type = #{worksType} AND DATEDIFF(NOW(),`create_at`) = 1
+    </select>
+
+    <select id="findByNovelAndPostTime" resultType="com.qiangdong.reader.dto.SubscribeDto">
+        select
+            nc.id as chapterId,
+            nc.`index`,
+            nc.title,
+            nc.create_at,
+            s.`count`
+        from (
+            select count(*) as `count`, associate_id
+            from subscribe
+            where works_id = #{novelId} and associate_type = 2
+            GROUP BY associate_id
+        ) as s
+        inner join novel_chapter nc on s.associate_id = nc.id
+        where  EXTRACT(YEAR_MONTH FROM nc.create_at) = EXTRACT(YEAR_MONTH FROM #{postTime})
+        order by nc.`create_at` desc
+    </select>
+
+    <select id="findByComicAndPostTime" resultType="com.qiangdong.reader.dto.SubscribeDto">
+        select
+            cc.id as chapterId,
+            cc.`index`,
+            cc.title,
+            cc.create_at,
+            s.`count`
+        from (
+            select count(*) as `count`, associate_id
+            from subscribe
+            where works_id = #{comicId} and associate_type = 1
+            GROUP BY associate_id
+        ) as s
+        inner join comic_chapter cc on s.associate_id = cc.id
+        where  EXTRACT(YEAR_MONTH FROM cc.create_at) = EXTRACT(YEAR_MONTH FROM #{postTime})
+        order by cc.`create_at` desc
+    </select>
+
+    <select id="countMaxChapterSubscribe" resultType="java.lang.Integer">
+        select count(*) as `count`
+        from subscribe
+        WHERE works_id = #{worksId} and associate_type = #{worksType}
+        GROUP BY associate_id
+        order by `count` desc
+        LIMIT 1
+    </select>
+    
+    <select id="sumSubscribeByWorks" resultType="java.lang.Integer">
+        select ifnull(SUM(coin), 0)
+        from `subscribe`
+        where works_id = #{worksId} and associate_type = #{worksType}
+	        and month(create_at) = month(#{time})  and year(create_at) = year(#{time})
+    </select>
+
+    <select id="findByWorksAndTime" resultType="com.qiangdong.reader.dto.SubscribeDto">
+        select
+            s.coin,
+            s.create_at,
+            u.username
+        from subscribe s
+        inner join `user` u on s.user_id = u.id
+         where s.works_id = #{worksId} and s.associate_type = #{worksType}
+	        and month(s.create_at) = month(#{time})  and year(s.create_at) = year(#{time})
+    </select>
+
+    <select id="findYesterdaySubscribeByWorksType" resultType="com.qiangdong.reader.entity.Subscribe">
+        select
+            works_id,
+            coin
+        from subscribe
+        where year(create_at) = year(#{time}) and month(create_at) = month(#{time}) and day(create_at) = day(#{time})
+            and associate_type = #{worksType}
+    </select>
+</mapper>
